@@ -2,6 +2,8 @@
 import sha1 from 'sha1';
 import Queue from 'bull/lib/queue';
 import dbClient from '../utils/db';
+import { ObjectId } from 'mongodb';
+import redisClient from '../utils/redis';
 
 const userQueue = new Queue('email sending');
 
@@ -33,8 +35,28 @@ export default class UsersController {
   }
 
   static async getMe(req, res) {
-    const { user } = req;
+    const token = req.headers['x-token'];
 
-    res.status(200).json({ email: user.email, id: user._id.toString() });
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      const userId = await redisClient.get(`auth_${token}`);
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const user = await (await dbClient.usersCollection()).findOne({ _id: new ObjectId(userId) });
+
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      res.status(200).json({ email: user.email, id: user._id.toString() });
+    } catch (error) {
+      console.error('Error in getMe:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
   }
 }
