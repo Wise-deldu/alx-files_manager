@@ -1,8 +1,8 @@
 /* eslint-disable import/no-named-as-default */
 import sha1 from 'sha1';
 import Queue from 'bull/lib/queue';
-import dbClient from '../utils/db';
 import { ObjectId } from 'mongodb';
+import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
 const userQueue = new Queue('email sending');
@@ -53,10 +53,10 @@ export default class UsersController {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      res.status(200).json({ email: user.email, id: user._id.toString() });
+      return res.status(200).json({ email: user.email, id: user._id.toString() });
     } catch (error) {
       console.error('Error in getMe:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 }
